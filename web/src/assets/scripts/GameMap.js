@@ -1,4 +1,5 @@
 import { GameObject } from "./GameObjects";
+import { Snake } from "./Snake";
 import { Wall } from "./Wall";
 
 export class GameMap extends GameObject {
@@ -9,10 +10,15 @@ export class GameMap extends GameObject {
         this.parent = parent;
         this.L = 0;
         this.rows = 13;
-        this.cols = 13;
+        this.cols = 14;
         this.inner_walls = [];
         this.inner_walls_count = 20;
         this.walls = [];
+
+        this.snacks = [
+            new Snake({ id: 0, color: "#F94848", r: this.rows - 2, c: 1 }, this),
+            new Snake({ id: 1, color: "#4876EC", r: 1, c: this.cols - 2 }, this),
+        ];
     }
     check_connect(g, sx, sy, tx, ty) {
         if (sx == tx && sy == ty) return true;
@@ -26,11 +32,49 @@ export class GameMap extends GameObject {
         }
         return false;
     }
+    check_valid(cell) {
+        for (const wall of this.walls) {
+            if (wall.r === cell.r && wall.c === cell.c)
+                return false;
+        }
+        for (const snake of this.snacks) {
+            let k = snake.cells.length;
+            if (!snake.check_tail_increasing()) k--;
+            for (let i = 0; i < k; i++) {
+                if (cell.r === snake.cells[i].r && cell.c === snake.cells[i].c)
+                    return false;
+            }
+        }
+        return true;
+    }
+    add_listening_events() {
+        this.ctx.canvas.focus();
+        const [snack0, snack1] = this.snacks;
+        this.ctx.canvas.addEventListener("keydown", e => {
+            if (e.key === 'w') snack0.set_direction(0);
+            else if (e.key === 'd') snack0.set_direction(1);
+            else if (e.key === 's') snack0.set_direction(2);
+            else if (e.key === 'a') snack0.set_direction(3);
+            else if (e.key === 'ArrowUp') snack1.set_direction(0);
+            else if (e.key === 'ArrowRight') snack1.set_direction(1);
+            else if (e.key === 'ArrowDown') snack1.set_direction(2);
+            else if (e.key === 'ArrowLeft') snack1.set_direction(3);
+        });
+    }
+
     start() {
         for (let i = 0; i < 1000; i++) {
             if (this.create_walls())
                 break;
         }
+        this.add_listening_events();
+    }
+    check_ready() {
+        for (const snack of this.snacks) {
+            if (snack.status !== "idle") return false;
+            if (snack.direction === -1) return false;
+        }
+        return true;
     }
     create_walls() {
         const g = [];
@@ -55,7 +99,7 @@ export class GameMap extends GameObject {
                 if (r == this.rows - 2 && c == 1 || r == 1 && c == this.cols - 2)
                     continue;
 
-                g[r][c] = g[c][r] = true;
+                g[r][c] = g[this.rows - 1 - r][this.cols - 1 - c] = true;
                 break;
 
             }
@@ -81,7 +125,14 @@ export class GameMap extends GameObject {
     }
     update() {
         this.update_size();
+        if (this.check_ready()) {
+            this.next_step();
+        }
         this.render();
+    }
+    next_step() {
+        for (const snack of this.snacks)
+            snack.next_step();
     }
     render() {
         const color_even = "#AAD751", color_odd = "#A2D149";
