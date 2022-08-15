@@ -4,6 +4,8 @@ import RecordIndexView from '@/views/record/RecordIndexView'
 import RankListView from '@/views/ranklist/RankListView'
 import UserBotIndexView from '@/views/user/bot/UserBotIndexView'
 import NotFoundView from '@/views/error/NotFoundView'
+import UserAccountLoginView from '@/views/user/account/UserAccountLoginView'
+import UserAccountRegisterView from '@/views/user/account/UserAccountRegisterView'
 
 
 const routes = [
@@ -40,7 +42,17 @@ const routes = [
   {
     path: "/:catchAll(.*)",
     redirect: "/404/"
-  }
+  },
+  {
+    path: "/user/account/login/",
+    name: "user_account_login",
+    component: UserAccountLoginView,
+  },
+  {
+    path: "/user/account/register/",
+    name: "user_account_register",
+    component: UserAccountRegisterView,
+  },
 
 ]
 
